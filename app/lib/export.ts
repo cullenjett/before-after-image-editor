@@ -31,7 +31,7 @@ export async function exportImage(
         else reject(new Error("Failed to create blob from canvas"))
       },
       "image/jpeg",
-      0.9
+      1
     )
   })
 }

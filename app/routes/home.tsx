@@ -178,8 +178,8 @@ export default function Home() {
       <div className="grid min-h-0 flex-1 grid-cols-2 gap-4 overflow-hidden">
         {/* Before column */}
         <div className="flex h-full flex-col gap-2 overflow-hidden">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
               <h2 className="text-sm font-medium">Before</h2>
               {before.filename && (
                 <p className="truncate text-xs text-muted-foreground">
@@ -236,8 +236,8 @@ export default function Home() {
 
         {/* After column */}
         <div className="flex h-full flex-col gap-2 overflow-hidden">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
               <h2 className="text-sm font-medium">After</h2>
               {after.filename && (
                 <p className="truncate text-xs text-muted-foreground">

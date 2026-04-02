@@ -1,9 +1,20 @@
 import type { Adjustments } from "~/components/image-editor-panel"
 
-export function appendCropped(filename: string): string {
+export type ExportFormat = "webp" | "jpg"
+
+const MIME: Record<ExportFormat, string> = {
+  webp: "image/webp",
+  jpg: "image/jpeg",
+}
+
+export function getExportFilename(
+  filename: string,
+  suffix: string,
+  format: ExportFormat
+): string {
   const dot = filename.lastIndexOf(".")
-  if (dot === -1) return filename + "_cropped"
-  return filename.slice(0, dot) + "_cropped" + filename.slice(dot)
+  const base = dot === -1 ? filename : filename.slice(0, dot)
+  return `${base}${suffix}.${format}`
 }
 
 export function buildFilterString(adjustments: Adjustments): string {
@@ -12,7 +23,8 @@ export function buildFilterString(adjustments: Adjustments): string {
 
 export async function exportImage(
   canvas: HTMLCanvasElement,
-  adjustments: Adjustments
+  adjustments: Adjustments,
+  format: ExportFormat = "webp"
 ): Promise<Blob> {
   const offscreen = document.createElement("canvas")
   offscreen.width = canvas.width
@@ -30,7 +42,47 @@ export async function exportImage(
         if (blob) resolve(blob)
         else reject(new Error("Failed to create blob from canvas"))
       },
-      "image/jpeg",
+      MIME[format],
+      1
+    )
+  })
+}
+
+export async function exportCombined(
+  beforeCanvas: HTMLCanvasElement,
+  afterCanvas: HTMLCanvasElement,
+  beforeAdjustments: Adjustments,
+  afterAdjustments: Adjustments,
+  format: ExportFormat = "webp"
+): Promise<Blob> {
+  const targetHeight = Math.max(beforeCanvas.height, afterCanvas.height)
+  const beforeW = Math.round(
+    beforeCanvas.width * (targetHeight / beforeCanvas.height)
+  )
+  const afterW = Math.round(
+    afterCanvas.width * (targetHeight / afterCanvas.height)
+  )
+
+  const offscreen = document.createElement("canvas")
+  offscreen.width = beforeW + afterW
+  offscreen.height = targetHeight
+
+  const ctx = offscreen.getContext("2d")
+  if (!ctx) throw new Error("Could not get 2d context")
+
+  ctx.filter = buildFilterString(beforeAdjustments)
+  ctx.drawImage(beforeCanvas, 0, 0, beforeW, targetHeight)
+
+  ctx.filter = buildFilterString(afterAdjustments)
+  ctx.drawImage(afterCanvas, beforeW, 0, afterW, targetHeight)
+
+  return new Promise<Blob>((resolve, reject) => {
+    offscreen.toBlob(
+      (blob) => {
+        if (blob) resolve(blob)
+        else reject(new Error("Failed to create blob from canvas"))
+      },
+      MIME[format],
       1
     )
   })

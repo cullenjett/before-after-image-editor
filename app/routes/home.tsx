@@ -14,7 +14,13 @@ import {
 } from "~/components/shared-toolbar"
 import { PreviewModal } from "~/components/preview-modal"
 import { Button } from "~/components/ui/button"
-import { exportImage, downloadBlob, appendCropped } from "~/lib/export"
+import {
+  exportImage,
+  exportCombined,
+  downloadBlob,
+  getExportFilename,
+  type ExportFormat,
+} from "~/lib/export"
 
 interface ImageState {
   src: string | null
@@ -34,6 +40,7 @@ export default function Home() {
   const [showGrid, setShowGrid] = useState(true)
   const [lockAspect, setLockAspect] = useState(true)
   const [aspectRatio, setAspectRatio] = useState<AspectRatioPreset>(0.876)
+  const [exportFormat, setExportFormat] = useState<ExportFormat>("webp")
 
   const beforeRef = useRef<CropperRef>(null)
   const afterRef = useRef<CropperRef>(null)
@@ -95,15 +102,21 @@ export default function Home() {
   const handleBeforeDownload = async () => {
     const canvas = beforeRef.current?.getCanvas()
     if (!canvas) return
-    const blob = await exportImage(canvas, before.adjustments)
-    downloadBlob(blob, appendCropped(before.filename))
+    const blob = await exportImage(canvas, before.adjustments, exportFormat)
+    downloadBlob(
+      blob,
+      getExportFilename(before.filename, "_cropped", exportFormat)
+    )
   }
 
   const handleAfterDownload = async () => {
     const canvas = afterRef.current?.getCanvas()
     if (!canvas) return
-    const blob = await exportImage(canvas, after.adjustments)
-    downloadBlob(blob, appendCropped(after.filename))
+    const blob = await exportImage(canvas, after.adjustments, exportFormat)
+    downloadBlob(
+      blob,
+      getExportFilename(after.filename, "_cropped", exportFormat)
+    )
   }
 
   const handleDownloadBoth = async () => {
@@ -111,11 +124,34 @@ export default function Home() {
     const afterCanvas = afterRef.current?.getCanvas()
     if (!beforeCanvas || !afterCanvas) return
     const [beforeBlob, afterBlob] = await Promise.all([
-      exportImage(beforeCanvas, before.adjustments),
-      exportImage(afterCanvas, after.adjustments),
+      exportImage(beforeCanvas, before.adjustments, exportFormat),
+      exportImage(afterCanvas, after.adjustments, exportFormat),
     ])
-    downloadBlob(beforeBlob, appendCropped(before.filename))
-    downloadBlob(afterBlob, appendCropped(after.filename))
+    downloadBlob(
+      beforeBlob,
+      getExportFilename(before.filename, "_cropped", exportFormat)
+    )
+    downloadBlob(
+      afterBlob,
+      getExportFilename(after.filename, "_cropped", exportFormat)
+    )
+  }
+
+  const handleDownloadCombined = async () => {
+    const beforeCanvas = beforeRef.current?.getCanvas()
+    const afterCanvas = afterRef.current?.getCanvas()
+    if (!beforeCanvas || !afterCanvas) return
+    const blob = await exportCombined(
+      beforeCanvas,
+      afterCanvas,
+      before.adjustments,
+      after.adjustments,
+      exportFormat
+    )
+    downloadBlob(
+      blob,
+      getExportFilename(before.filename, "_before_and_after", exportFormat)
+    )
   }
 
   const handlePreview = async () => {
@@ -171,6 +207,10 @@ export default function Home() {
         onAspectRatioChange={setAspectRatio}
         onDownloadBoth={handleDownloadBoth}
         canDownloadBoth={!!before.src && !!after.src}
+        onDownloadCombined={handleDownloadCombined}
+        canDownloadCombined={!!before.src && !!after.src}
+        exportFormat={exportFormat}
+        onExportFormatChange={setExportFormat}
         onPreview={handlePreview}
         canPreview={!!before.src && !!after.src}
       />

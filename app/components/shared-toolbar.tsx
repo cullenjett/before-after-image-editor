@@ -1,6 +1,7 @@
 import { Download, Eye, Grid3x3, Lock, Unlock } from "lucide-react"
 import { Button } from "~/components/ui/button"
 import { cn } from "~/lib/utils"
+import type { ExportFormat } from "~/lib/export"
 
 export const ASPECT_RATIO_PRESETS = [
   { label: "Free", value: undefined },
@@ -21,6 +22,10 @@ interface SharedToolbarProps {
   onAspectRatioChange: (value: AspectRatioPreset) => void
   onDownloadBoth: () => void
   canDownloadBoth: boolean
+  onDownloadCombined: () => void
+  canDownloadCombined: boolean
+  exportFormat: ExportFormat
+  onExportFormatChange: (format: ExportFormat) => void
   onPreview: () => void
   canPreview: boolean
 }
@@ -34,6 +39,10 @@ export function SharedToolbar({
   onAspectRatioChange,
   onDownloadBoth,
   canDownloadBoth,
+  onDownloadCombined,
+  canDownloadCombined,
+  exportFormat,
+  onExportFormatChange,
   onPreview,
   canPreview,
 }: SharedToolbarProps) {
@@ -88,6 +97,26 @@ export function SharedToolbar({
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        {/* Export format toggle */}
+        <div className="flex items-center rounded-md border">
+          {(["webp", "jpg"] as ExportFormat[]).map((fmt) => (
+            <button
+              key={fmt}
+              onClick={() => onExportFormatChange(fmt)}
+              className={cn(
+                "px-2.5 py-1 text-xs transition-colors first:rounded-l-md last:rounded-r-md",
+                exportFormat === fmt
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              {fmt.toUpperCase()}
+            </button>
+          ))}
+        </div>
+
+        <div className="h-5 w-px bg-border" />
+
         <Button
           variant="outline"
           size="sm"
@@ -96,6 +125,15 @@ export function SharedToolbar({
         >
           <Eye className="mr-1.5 h-4 w-4" />
           Preview
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onDownloadCombined}
+          disabled={!canDownloadCombined}
+        >
+          <Download className="mr-1.5 h-4 w-4" />
+          Combined
         </Button>
         <Button size="sm" onClick={onDownloadBoth} disabled={!canDownloadBoth}>
           <Download className="mr-1.5 h-4 w-4" />
